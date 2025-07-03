@@ -1,0 +1,30 @@
+[
+  {
+    "Year": 2014,
+    "Title": "Interstellar",
+    "Genre": "Sci-Fi",
+    "Director": "Christopher Nolan",
+    "Rating": 8.7
+  },
+  {
+    "Year": 2009,
+    "Title": "The Prestige",
+    "Genre": "Sci-Fi, Thriller",
+    "Director": "Christopher Nolan",
+    "Rating": 8.5
+  },
+  {
+    "Year": 2013,
+    "Title": "Prisoners",
+    "Genre": "Thriller",
+    "Director": "Denny Villeneuve",
+    "Rating": 8.2
+  },
+  {
+    "Year": 2019,
+    "Title": "Avengers: Endgame",
+    "Genre": "Action, Scifi",
+    "Director": "Anthony Russo, Joe Russo",
+    "Rating": 8.4
+  }
+]
