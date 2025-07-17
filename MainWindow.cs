@@ -10,14 +10,15 @@ public partial class MainWindow : Form
     private ListBox movieListBox;
     private Button editButton;
     private Button deleteButton;
+    private TextBox searchBox;
+
     public MainWindow()
     {
         InitializeComponent();
         Catalog = new Catalog();
 
         AddAddMovieButton();
-        AddDeleteButton();
-        AddImportFromExcelButton(); 
+        AddImportFromExcelButton();
 
         movieListBox = new ListBox();
         movieListBox.Location = new Point(20, 60);
@@ -25,9 +26,7 @@ public partial class MainWindow : Form
         movieListBox.HorizontalScrollbar = true;
         this.Controls.Add(movieListBox);
 
-        RefreshMovieList();
-
-        TextBox searchBox = new TextBox();
+        searchBox = new TextBox();
         searchBox.Name = "searchBox";
         searchBox.PlaceholderText = "Search movies...";
         searchBox.Location = new Point(20, 20);
@@ -40,14 +39,14 @@ public partial class MainWindow : Form
         editButton = new Button();
         editButton.Text = "Edit";
         editButton.Location = new Point(450, 270);
-        editButton.Visible = false; 
+        editButton.Visible = false;
         editButton.Click += EditButton_Click;
         this.Controls.Add(editButton);
 
         deleteButton = new Button();
         deleteButton.Text = "Delete";
         deleteButton.Location = new Point(545, 270);
-        deleteButton.Visible = false; 
+        deleteButton.Visible = false;
         deleteButton.Click += DeleteButton_Click;
         this.Controls.Add(deleteButton);
 
@@ -62,7 +61,6 @@ public partial class MainWindow : Form
     private void AddAddMovieButton()
     {
         Button addMovieButton = new Button();
-
         addMovieButton.Text = "Add Movie";
         addMovieButton.Location = new Point(260, 20);
         addMovieButton.Click += (s, e) =>
@@ -71,7 +69,6 @@ public partial class MainWindow : Form
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    // You can add validation here if needed
                     var movie = new Movie
                     {
                         Title = form.Title,
@@ -81,73 +78,26 @@ public partial class MainWindow : Form
                         Rating = float.TryParse(form.Rating, out float r) ? r : 0
                     };
                     Catalog.AddMovie(movie);
-                    RefreshMovieList();
+                    Catalog.ExportToExcel(); // This updates the Excel file
+                    FilterMovieList(searchBox.Text);
                 }
             }
         };
-
         this.Controls.Add(addMovieButton);
-    }
-
-    private void AddDeleteButton()
-    {
-        deleteButton = new Button();
-        deleteButton.Text = "Delete Movie";
-        deleteButton.Location = new Point(360, 20); 
-        deleteButton.Click += (s, e) => { Catalog.DeleteMovie(); RefreshMovieList(); };
-
-        this.Controls.Add(deleteButton);
     }
 
     private void AddImportFromExcelButton()
     {
         Button importButton = new Button();
         importButton.Text = "Import";
-        importButton.Location = new Point(460, 20); 
+        importButton.Location = new Point(460, 20);
         importButton.Click += (s, e) =>
         {
-            var importedMovies = Catalog.ImportFromExcel();
-            var added = 0;
-            foreach (var movie in importedMovies)
-            {
-                // Avoid duplicates (optional)
-                if (!Catalog.GetAllMovies().Exists(m => m.Title == movie.Title && m.Year == movie.Year))
-                {
-                    Catalog.AddMovie(movie);
-                    added++;
-                }
-            }
-            RefreshMovieList();
-            MessageBox.Show($"{added} movies imported from Excel.");
+            Catalog.ImportFromExcelAndSync();
+            FilterMovieList(searchBox.Text);
+            MessageBox.Show("Movies imported and synchronized with Excel and JSON.");
         };
         this.Controls.Add(importButton);
-    }
-
-    private void ShowMoviesInListBox()
-    {
-        movieListBox.Items.Clear();
-        var movies = Catalog?.GetAllMovies();
-        if (movies != null && movies.Count > 0)
-        {
-            foreach (var movie in movies)
-            {
-                movieListBox.Items.Add($"{movie.Title}, {movie.Year}, {movie.Genre}, {movie.Director}, Rating: {movie.Rating}");
-            }
-        }
-        else
-        {
-            movieListBox.Items.Add("No movies found.");
-        }
-    }
-
-    private void RefreshMovieList()
-    {
-        movieListBox.Items.Clear();
-        var movies = Catalog.GetAllMovies();
-        foreach (var movie in movies)
-        {
-            movieListBox.Items.Add($"{movie.Title}, {movie.Year}, {movie.Genre}, {movie.Director}, Rating: {movie.Rating}");
-        }
     }
 
     private void FilterMovieList(string searchText)
@@ -179,7 +129,6 @@ public partial class MainWindow : Form
         var movie = movies[index];
         using (var form = new AddMovieForm())
         {
-            // Pre-fill form fields
             form.SetMovie(movie);
             if (form.ShowDialog() == DialogResult.OK)
             {
@@ -189,7 +138,8 @@ public partial class MainWindow : Form
                 movie.Year = int.TryParse(form.Year, out int y) ? y : 0;
                 movie.Rating = float.TryParse(form.Rating, out float r) ? r : 0;
                 Catalog.UpdateMovie(index, movie);
-                FilterMovieList(""); 
+                Catalog.ExportToExcel(); // Automatically export
+                FilterMovieList(searchBox.Text);
             }
         }
     }
@@ -206,7 +156,8 @@ public partial class MainWindow : Form
         if (result == DialogResult.Yes)
         {
             Catalog.DeleteMovieAt(index);
-            FilterMovieList(""); 
+            Catalog.ExportToExcel(); // Automatically export
+            FilterMovieList(searchBox.Text);
         }
     }
 }

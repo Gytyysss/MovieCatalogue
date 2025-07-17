@@ -17,6 +17,7 @@ public class Catalog
         movies.Add(movie);
         File.WriteAllText(filePath, JsonConvert.SerializeObject(movies, Formatting.Indented));
         MessageBox.Show($"Movie '{movie.Title}' added successfully to {filePath}");
+        ExportToExcel(); // Update the Excel file after adding a movie
     }
 
     public void DeleteMovie()
@@ -116,14 +117,17 @@ public class Catalog
 
     public List<Movie> ImportFromExcel(string excelPath = "movies.xlsx")
     {
+        // Always search for the file in the output folder
+        string excelFullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, excelPath);
+
         var movies = new List<Movie>();
-        if (!File.Exists(excelPath))
+        if (!File.Exists(excelFullPath))
         {
-            MessageBox.Show("Excel file not found.");
+            MessageBox.Show("Excel file not found: " + excelFullPath);
             return movies;
         }
 
-        using (var workbook = new XLWorkbook(excelPath))
+        using (var workbook = new XLWorkbook(excelFullPath))
         {
             var worksheet = workbook.Worksheet(1);
             var row = 2;
@@ -142,5 +146,41 @@ public class Catalog
             }
         }
         return movies;
+    }
+    public void ImportFromExcelAndSync(string excelPath = "movies.xlsx")
+    {
+        string excelFullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, excelPath);
+
+        var movies = new List<Movie>();
+        if (!File.Exists(excelFullPath))
+        {
+            MessageBox.Show("Excel file not found: " + excelFullPath);
+            return;
+        }
+
+        using (var workbook = new XLWorkbook(excelFullPath))
+        {
+            var worksheet = workbook.Worksheet(1);
+            var row = 2;
+            while (!worksheet.Cell(row, 1).IsEmpty())
+            {
+                var movie = new Movie
+                {
+                    Title = worksheet.Cell(row, 1).GetString(),
+                    Director = worksheet.Cell(row, 2).GetString(),
+                    Genre = worksheet.Cell(row, 3).GetString(),
+                    Year = int.TryParse(worksheet.Cell(row, 4).GetString(), out int y) ? y : 0,
+                    Rating = float.TryParse(worksheet.Cell(row, 5).GetString(), out float r) ? r : 0
+                };
+                movies.Add(movie);
+                row++;
+            }
+        }
+
+        // Overwrite JSON file with Excel data
+        File.WriteAllText(filePath, JsonConvert.SerializeObject(movies, Formatting.Indented));
+
+        // Optionally, refresh Excel file to match JSON (keeps formatting consistent)
+        ExportToExcel();
     }
 }

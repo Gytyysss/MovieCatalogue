@@ -11,7 +11,7 @@
     "Title": "The Prestige",
     "Genre": "Sci-Fi, Thriller",
     "Director": "Christopher Nolan",
-    "Rating": 8.5
+    "Rating": 8.6
   },
   {
     "Year": 2013,
@@ -26,5 +26,54 @@
     "Genre": "Action, Scifi",
     "Director": "Anthony Russo, Joe Russo",
     "Rating": 8.4
+  },
+  {
+    "Year": 2022,
+    "Title": "The Unbearable Weight of Massive Talent",
+    "Genre": "Action, Comedy",
+    "Director": "Tom Gormican",
+    "Rating": 7.0
+  },
+  {
+    "Year": 1995,
+    "Title": "The Usual Suspects",
+    "Genre": "Thriller, Crime",
+    "Director": "Bryan Singer",
+    "Rating": 8.5
+  },
+  {
+    "Year": 2001,
+    "Title": "Ocean's Eleven",
+    "Genre": "Crime, Comedy",
+    "Director": "Steven Soderbergh",
+    "Rating": 7.7
+  },
+  {
+    "Year": 2013,
+    "Title": "The Hunger Games: Catching Fire",
+    "Genre": "Action, Sci-Fi",
+    "Director": "Francis Lawrence",
+    "Rating": 7.5
+  },
+  {
+    "Year": 2012,
+    "Title": "The Hunger Games",
+    "Genre": "Action, Sci-Fi",
+    "Director": "Gary Ross",
+    "Rating": 7.2
+  },
+  {
+    "Year": 2014,
+    "Title": "The Hunger Games: Mockingjay – Part 1",
+    "Genre": "Action, Sci-Fi",
+    "Director": "Francis Lawrence",
+    "Rating": 6.6
+  },
+  {
+    "Year": 2015,
+    "Title": "The Hunger Games: Mockingjay – Part 2",
+    "Genre": "Action, Sci-Fi",
+    "Director": "Francis Lawrence",
+    "Rating": 6.6
   }
 ]
