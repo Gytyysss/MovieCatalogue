@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Threading.Tasks;
 
 namespace MovieCatalogGUI;
 
@@ -14,6 +15,8 @@ public partial class MainWindow : Form
     private Button importButton;
     private TextBox searchBox;
     private bool isDarkTheme = true; // Add this field to your class
+    private SlidingPanelContainer slidingPanels;
+    private AddMoviePanel currentMoviePanel = null; // Add this field to your MainWindow class
 
     public MainWindow()
     {
@@ -56,26 +59,7 @@ public partial class MainWindow : Form
         addMovieButton.Dock = DockStyle.Fill;
         addMovieButton.Font = new Font("Courier New", 12, FontStyle.Bold);
         addMovieButton.Text = addMovieButton.Text.ToUpper();
-        addMovieButton.Click += (s, e) =>
-        {
-            using (var form = new AddMovieForm())
-            {
-                if (form.ShowDialog() == DialogResult.OK)
-                {
-                    var movie = new Movie
-                    {
-                        Title = form.Title,
-                        Director = form.Director,
-                        Genre = form.Genre,
-                        Year = int.TryParse(form.Year, out int y) ? y : 0,
-                        Rating = float.TryParse(form.Rating, out float r) ? r : 0
-                    };
-                    Catalog.AddMovie(movie);
-                    Catalog.ExportToExcel(); // This updates the Excel file
-                    FilterMovieList(searchBox.Text);
-                }
-            }
-        };
+        addMovieButton.Click += (s, e) => ShowAddMoviePanel();
         table.Controls.Add(addMovieButton, 0, 2);
         table.Controls.Add(addMovieButton, 0, 2);
         // Import button
@@ -133,6 +117,9 @@ public partial class MainWindow : Form
         table.Controls.Add(themeToggleButton, 0, 3);
         table.SetColumnSpan(themeToggleButton, 4);
 
+        slidingPanels = new SlidingPanelContainer(350);
+        this.Controls.Add(slidingPanels);
+
         ApplyTheme(); // Call ApplyTheme() at the end of your constructor
         FilterMovieList("");
         this.Resize += MainWindow_Resize;
@@ -166,8 +153,12 @@ public partial class MainWindow : Form
         }
     }
 
-    private void EditButton_Click(object sender, EventArgs e)
+    private async void EditButton_Click(object sender, EventArgs e)
     {
+        // Prevent opening if the top panel is already AddMoviePanel (Edit mode)
+        if (slidingPanels.TopPanel is AddMoviePanel amp && amp.IsEditMode)
+            return; // Prevent duplicate Edit panels in a row
+
         var index = movieListBox.SelectedIndex;
         if (index < 0) return;
 
@@ -175,21 +166,32 @@ public partial class MainWindow : Form
         if (index >= movies.Count) return;
 
         var movie = movies[index];
-        using (var form = new AddMovieForm())
+        var editPanel = new AddMoviePanel();
+        editPanel.IsEditMode = true;
+
+        editPanel.SetMovie(movie);
+
+        editPanel.MovieSaved += (updatedMovie) =>
         {
-            form.SetMovie(movie);
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                movie.Title = form.Title;
-                movie.Director = form.Director;
-                movie.Genre = form.Genre;
-                movie.Year = int.TryParse(form.Year, out int y) ? y : 0;
-                movie.Rating = float.TryParse(form.Rating, out float r) ? r : 0;
-                Catalog.UpdateMovie(index, movie);
-                Catalog.ExportToExcel(); // Automatically export
-                FilterMovieList(searchBox.Text);
-            }
-        }
+            movie.Title = updatedMovie.Title;
+            movie.Director = updatedMovie.Director;
+            movie.Genre = updatedMovie.Genre;
+            movie.Year = updatedMovie.Year;
+            movie.Rating = updatedMovie.Rating;
+            Catalog.UpdateMovie(index, movie);
+            Catalog.ExportToExcel();
+            FilterMovieList(searchBox.Text);
+            slidingPanels.SlideOut();
+        };
+
+        editPanel.Cancelled += () =>
+        {
+            slidingPanels.SlideOut();
+        };
+
+        editPanel.ApplyTheme(isDarkTheme);
+
+        await slidingPanels.SlideIn(editPanel, GetNextPanelDirection());
     }
 
     private void DeleteButton_Click(object sender, EventArgs e)
@@ -297,5 +299,44 @@ public partial class MainWindow : Form
         {
             g.DrawString(text, btn.Font, textBrush, x, y);
         }
+    }
+
+    private async void ShowAddMoviePanel()
+    {
+        if (slidingPanels.TopPanel is AddMoviePanel amp && !amp.IsEditMode)
+            return; // Prevent duplicate Add panels in a row
+
+        var addPanel = new AddMoviePanel();
+        addPanel.IsEditMode = false;
+
+        addPanel.MovieSaved += (movie) =>
+        {
+            Catalog.AddMovie(movie);
+            Catalog.ExportToExcel();
+            FilterMovieList(searchBox.Text);
+            slidingPanels.SlideOut();
+        };
+
+        addPanel.Cancelled += () =>
+        {
+            slidingPanels.SlideOut();
+        };
+
+        addPanel.ApplyTheme(isDarkTheme);
+
+        await slidingPanels.SlideIn(addPanel, GetNextPanelDirection());
+    }
+
+    private async void HideAddMoviePanel()
+    {
+        slidingPanels.SlideOut();
+    }
+
+    private SlideDirection GetNextPanelDirection()
+    {
+        // If no panels are open, slide from right; otherwise, from bottom
+        // If SlidingPanelContainer does not have PanelCount, check if a panel is currently shown
+        // Assume SlidingPanelContainer has an IsPanelShown property or method
+        return !slidingPanels.IsPanelShown ? SlideDirection.Right : SlideDirection.Bottom;
     }
 }
