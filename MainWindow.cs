@@ -8,61 +8,54 @@ public partial class MainWindow : Form
 {
     public Catalog Catalog;
     private ListBox movieListBox;
+    private Button addMovieButton;
     private Button editButton;
     private Button deleteButton;
+    private Button importButton;
     private TextBox searchBox;
+    private bool isDarkTheme = true; // Add this field to your class
 
     public MainWindow()
     {
         InitializeComponent();
+        this.BackColor = Color.FromArgb(30, 30, 30); // Shadowy black background
         Catalog = new Catalog();
 
-        AddAddMovieButton();
-        AddImportFromExcelButton();
+        // Create TableLayoutPanel
+        var table = new TableLayoutPanel();
+        table.Dock = DockStyle.Fill;
+        table.ColumnCount = 4;
+        table.RowCount = 3;
+        table.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); // Top row
+        table.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Middle row (list)
+        table.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Bottom row (buttons)
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+        this.Controls.Add(table);
 
-        movieListBox = new ListBox();
-        movieListBox.Location = new Point(20, 60);
-        movieListBox.Size = new Size(600, 200);
-        movieListBox.HorizontalScrollbar = true;
-        this.Controls.Add(movieListBox);
-
+        // Search box (spans all columns)
         searchBox = new TextBox();
-        searchBox.Name = "searchBox";
+        searchBox.Dock = DockStyle.Fill;
         searchBox.PlaceholderText = "Search movies...";
-        searchBox.Location = new Point(20, 20);
-        searchBox.Size = new Size(200, 25);
         searchBox.TextChanged += (s, e) => FilterMovieList(searchBox.Text);
-        this.Controls.Add(searchBox);
+        table.Controls.Add(searchBox, 0, 0);
+        table.SetColumnSpan(searchBox, 4);
 
-        FilterMovieList("");
-
-        editButton = new Button();
-        editButton.Text = "Edit";
-        editButton.Location = new Point(450, 270);
-        editButton.Visible = false;
-        editButton.Click += EditButton_Click;
-        this.Controls.Add(editButton);
-
-        deleteButton = new Button();
-        deleteButton.Text = "Delete";
-        deleteButton.Location = new Point(545, 270);
-        deleteButton.Visible = false;
-        deleteButton.Click += DeleteButton_Click;
-        this.Controls.Add(deleteButton);
-
-        movieListBox.SelectedIndexChanged += (s, e) =>
-        {
-            var valid = movieListBox.SelectedIndex >= 0 && !(movieListBox.SelectedItem?.ToString()?.Contains("No movies found.") ?? true);
-            editButton.Visible = valid;
-            deleteButton.Visible = valid;
-        };
-    }
-
-    private void AddAddMovieButton()
-    {
-        Button addMovieButton = new Button();
+        // Movie list
+        movieListBox = new ListBox();
+        movieListBox.Dock = DockStyle.Fill;
+        movieListBox.HorizontalScrollbar = true;
+        table.Controls.Add(movieListBox, 0, 1);
+        table.SetColumnSpan(movieListBox, 4);
+        
+        // Add Movie button
+        addMovieButton = new Button();
         addMovieButton.Text = "Add Movie";
-        addMovieButton.Location = new Point(260, 20);
+        addMovieButton.Dock = DockStyle.Fill;
+        addMovieButton.Font = new Font("Courier New", 12, FontStyle.Bold);
+        addMovieButton.Text = addMovieButton.Text.ToUpper();
         addMovieButton.Click += (s, e) =>
         {
             using (var form = new AddMovieForm())
@@ -83,21 +76,76 @@ public partial class MainWindow : Form
                 }
             }
         };
-        this.Controls.Add(addMovieButton);
-    }
-
-    private void AddImportFromExcelButton()
-    {
-        Button importButton = new Button();
+        table.Controls.Add(addMovieButton, 0, 2);
+        table.Controls.Add(addMovieButton, 0, 2);
+        // Import button
+        importButton = new Button();
         importButton.Text = "Import";
-        importButton.Location = new Point(460, 20);
+        importButton.Dock = DockStyle.Fill;
+        importButton.Font = new Font("Courier New", 12, FontStyle.Bold);
+        importButton.Text = importButton.Text.ToUpper();
         importButton.Click += (s, e) =>
         {
             Catalog.ImportFromExcelAndSync();
             FilterMovieList(searchBox.Text);
             MessageBox.Show("Movies imported and synchronized with Excel and JSON.");
         };
-        this.Controls.Add(importButton);
+        table.Controls.Add(importButton, 1, 2);
+        table.Controls.Add(importButton, 1, 2);
+
+        // Edit button
+        editButton = new Button();
+        editButton.Text = "Edit";
+        editButton.Dock = DockStyle.Fill;
+        editButton.Font = new Font("Courier New", 12, FontStyle.Bold);
+        editButton.Text = editButton.Text.ToUpper();
+        editButton.Visible = false;
+        editButton.Click += EditButton_Click;
+        table.Controls.Add(editButton, 2, 2);
+
+        // Delete button
+        deleteButton = new Button();
+        deleteButton.Text = "Delete";
+        deleteButton.Dock = DockStyle.Fill;
+        deleteButton.Font = new Font("Courier New", 12, FontStyle.Bold);
+        deleteButton.Text = deleteButton.Text.ToUpper();
+        deleteButton.Visible = false;
+        deleteButton.Click += DeleteButton_Click;
+        table.Controls.Add(deleteButton, 3, 2);
+
+        movieListBox.SelectedIndexChanged += (s, e) =>
+        {
+            var valid = movieListBox.SelectedIndex >= 0 && !(movieListBox.SelectedItem?.ToString()?.Contains("No movies found.") ?? true);
+            editButton.Visible = valid;
+            deleteButton.Visible = valid;
+        };
+
+        // Toggle Theme button
+        var themeToggleButton = new Button();
+        themeToggleButton.Text = "Toggle Theme";
+        themeToggleButton.Dock = DockStyle.Fill;
+        themeToggleButton.Font = new Font("Courier New", 12, FontStyle.Bold);
+        themeToggleButton.Click += (s, e) =>
+        {
+            isDarkTheme = !isDarkTheme;
+            ApplyTheme();
+        };
+        table.Controls.Add(themeToggleButton, 0, 3);
+        table.SetColumnSpan(themeToggleButton, 4);
+
+        ApplyTheme(); // Call ApplyTheme() at the end of your constructor
+        FilterMovieList("");
+        this.Resize += MainWindow_Resize;
+
+        addMovieButton.Paint += ButtonWithContour_Paint;
+        importButton.Paint += ButtonWithContour_Paint;
+        editButton.Paint += ButtonWithContour_Paint;
+        deleteButton.Paint += ButtonWithContour_Paint;
+
+        addMovieButton.UseCompatibleTextRendering = true;
+        importButton.UseCompatibleTextRendering = true;
+        editButton.UseCompatibleTextRendering = true;
+        deleteButton.UseCompatibleTextRendering = true;
     }
 
     private void FilterMovieList(string searchText)
@@ -158,6 +206,96 @@ public partial class MainWindow : Form
             Catalog.DeleteMovieAt(index);
             Catalog.ExportToExcel(); // Automatically export
             FilterMovieList(searchBox.Text);
+        }
+    }
+
+    private void MainWindow_Resize(object sender, EventArgs e)
+    {
+        // Example: scale font size between 10 and 20 based on window width
+        int minFont = 10;
+        int maxFont = 20;
+        int minWidth = 600;
+        int maxWidth = 1200;
+        int width = this.ClientSize.Width;
+
+        float fontSize = minFont + (maxFont - minFont) * (width - minWidth) / (float)(maxWidth - minWidth);
+        fontSize = Math.Max(minFont, Math.Min(maxFont, fontSize));
+
+        var font = new Font("Courier New", fontSize, FontStyle.Bold);
+
+        addMovieButton.Font = font;
+        importButton.Font = font;
+        editButton.Font = font;
+        deleteButton.Font = font;
+    }
+
+    private void ApplyTheme()
+    {
+        if (isDarkTheme)
+        {
+            this.BackColor = Color.FromArgb(30, 30, 30);
+            searchBox.BackColor = Color.FromArgb(45, 45, 45);
+            searchBox.ForeColor = Color.White;
+            movieListBox.BackColor = Color.FromArgb(45, 45, 45);
+            movieListBox.ForeColor = Color.White;
+            addMovieButton.BackColor = Color.FromArgb(50, 50, 50);
+            addMovieButton.ForeColor = Color.Green;
+            importButton.BackColor = Color.FromArgb(50, 50, 50);
+            importButton.ForeColor = Color.Orange;
+            editButton.BackColor = Color.FromArgb(50, 50, 50);
+            editButton.ForeColor = Color.Yellow;
+            deleteButton.BackColor = Color.FromArgb(50, 50, 50);
+            deleteButton.ForeColor = Color.Red;
+        }
+        else
+        {
+            this.BackColor = Color.White;
+            searchBox.BackColor = Color.White;
+            searchBox.ForeColor = Color.Black;
+            movieListBox.BackColor = Color.White;
+            movieListBox.ForeColor = Color.Black;
+            addMovieButton.BackColor = Color.White;
+            addMovieButton.ForeColor = Color.Green;
+            importButton.BackColor = Color.White;
+            importButton.ForeColor = Color.Orange;
+            editButton.BackColor = Color.White;
+            editButton.ForeColor = Color.Yellow;
+            deleteButton.BackColor = Color.White;
+            deleteButton.ForeColor = Color.Red;
+        }
+    }
+
+    private void ButtonWithContour_Paint(object sender, PaintEventArgs e)
+    {
+        var btn = sender as Button;
+        if (btn == null) return;
+
+        string text = btn.Text;
+        var g = e.Graphics;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+        // Center text
+        SizeF textSize = g.MeasureString(text, btn.Font);
+        float x = (btn.Width - textSize.Width) / 2;
+        float y = (btn.Height - textSize.Height) / 2;
+
+        // Draw contour by offsetting in 8 directions
+        using (var outlineBrush = new SolidBrush(Color.Black))
+        {
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    g.DrawString(text, btn.Font, outlineBrush, x + dx, y + dy);
+                }
+            }
+        }
+
+        // Draw main text
+        using (var textBrush = new SolidBrush(btn.ForeColor))
+        {
+            g.DrawString(text, btn.Font, textBrush, x, y);
         }
     }
 }
